@@ -1,4 +1,4 @@
-# Sistema de Reconhecimento Facial para Controle de Acesso
+# Sistema de Reconhecimento Facial para Controle de Acesso - Repositório destinado ao Front-End
 
 ### Licença
 MIT License
@@ -28,15 +28,16 @@ Estas instruções ajudarão você a configurar o ambiente local para desenvolvi
 ### Instalação
 1. Clone o repositório:
 
-```bash
-    git clone https://github.com/marcoshjf/Frontend_ScannIA.git
+   ```bash
+   git clone https://github.com/marcoshjf/Frontend_ScannIA.git
 
 2. Configure o ambiente:
 
-```bash
+    ```bash
     python -m venv venv
     source venv/bin/activate  # No Windows: venv\Scripts\activate
     pip install -r requirements.txt
+
 
 ---
 
