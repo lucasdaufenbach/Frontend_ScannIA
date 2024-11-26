@@ -37,7 +37,7 @@ const Dashboard = () => {
 
   // Obter as escolas ao carregar o componente
   useEffect(() => {
-    fetch('/api/schools')
+    fetch('http://localhost:8082/api/escolas/')
       .then((response) => response.json())
       .then((data) => setSchools(data))
       .catch((error) => console.error('Erro ao buscar escolas:', error));
@@ -46,7 +46,7 @@ const Dashboard = () => {
   // Obter as turmas de acordo com a escola selecionada
   useEffect(() => {
     if (person.school) {
-      fetch(`/api/classrooms?schoolId=${person.school}`)
+      fetch(`http://localhost:8082/api/turmas/?schoolId=${person.school}`)
         .then((response) => response.json())
         .then((data) => setClassrooms(data))
         .catch((error) => console.error('Erro ao buscar turmas:', error));
@@ -63,7 +63,7 @@ const Dashboard = () => {
   const handleSchoolSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('/api/schools', {
+      const response = await fetch('http://localhost:8082/api/escolas/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(school)
@@ -82,7 +82,7 @@ const Dashboard = () => {
   const handleClassroomSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('/api/classrooms', {
+      const response = await fetch('http://localhost:8082/api/turmas/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(classroom)
@@ -101,7 +101,7 @@ const Dashboard = () => {
   const handlePersonSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('/api/students', {
+      const response = await fetch('http://localhost:8082/api/alunos/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(person)
