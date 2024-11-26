@@ -4,9 +4,6 @@ import './Dashboard.css';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const handleNavigateToFacialRecognition = () => {
-    navigate('/reconhecimento-facial');
-  };
 
   // Estados de visibilidade para os formulários
   const [showSchoolForm, setShowSchoolForm] = useState(false);
@@ -25,9 +22,13 @@ const Dashboard = () => {
     courses: []
   });
 
-  const [newCourse, setNewCourse] = useState(''); // Novo curso a ser adicionado temporariamente
-  const [tempCourses, setTempCourses] = useState([]); // Cursos temporários antes do cadastro final
+  const [newCourse, setNewCourse] = useState('');
+  const [tempCourses, setTempCourses] = useState([]);
+  const [schools, setSchools] = useState([]);
+  const [courses, setCourses] = useState([]);
+  const [classrooms, setClassrooms] = useState([]);
 
+  // Estados para formulário de turma
   const [classroom, setClassroom] = useState({
     number: '',
     studentCount: '',
@@ -46,130 +47,131 @@ const Dashboard = () => {
     classroom: ''
   });
 
-  const [schools, setSchools] = useState([]); // Lista de escolas cadastradas
-  const [courses, setCourses] = useState([]); // Lista de cursos filtrada pela escola selecionada
-  const [classrooms, setClassrooms] = useState([]); // Lista de turmas filtrada pela escola e curso selecionado
-
-  // Carregar as escolas cadastradas ao iniciar
+  // Lógica para obter as escolas ao carregar
   useEffect(() => {
-    const savedSchools = JSON.parse(localStorage.getItem('reports')) || [];
-    setSchools(savedSchools.map((report) => report.school).filter(Boolean));
+    fetch('/api/schools') // Substitua pela URL da sua API
+      .then((response) => response.json())
+      .then((data) => {
+        setSchools(data);
+      })
+      .catch((error) => console.error('Erro ao buscar escolas:', error));
   }, []);
 
-  // lidar com mudanças nos campos da escola
+  // Atualizar os campos da escola
   const handleSchoolChange = (e) => {
     setSchool({ ...school, [e.target.name]: e.target.value });
   };
 
-  // adicionar um novo curso temporário à lista de cursos
   const handleAddCourse = () => {
     if (newCourse && !tempCourses.includes(newCourse)) {
       setTempCourses([...tempCourses, newCourse]);
-      setNewCourse(''); // Limpar o campo do curso
+      setNewCourse('');
     }
   };
 
-  // cadastrar a escola
   const handleSchoolSubmit = (e) => {
     e.preventDefault();
 
-    const schoolWithCourses = { ...school, courses: tempCourses }; // Adiciona os cursos temporários à escola
-    const reports = JSON.parse(localStorage.getItem('reports')) || [];
-    reports.push({ school: schoolWithCourses });
-
-    // Atualiza o localStorage e o estado de escolas
-    localStorage.setItem('reports', JSON.stringify(reports));
-    setSchools([...schools, schoolWithCourses]); // Adiciona a nova escola à lista de escolas
-
-    console.log('Escola cadastrada com sucesso!', schoolWithCourses);
-
-    // Limpar campos da escola e lista de cursos temporários
-    setSchool({
-      name: '',
-      address: '',
-      number: '',
-      cnpj: '',
-      studentCount: '',
-      foundationYear: '',
-      classroomCount: '',
-      courses: []
-    });
-    setTempCourses([]); // Limpar cursos temporários
+    const schoolWithCourses = { ...school, courses: tempCourses };
+    fetch('/api/schools', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(schoolWithCourses)
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        setSchools([...schools, data]);
+        setSchool({
+          name: '',
+          address: '',
+          number: '',
+          cnpj: '',
+          studentCount: '',
+          foundationYear: '',
+          classroomCount: '',
+          courses: []
+        });
+        setTempCourses([]);
+        console.log('Escola cadastrada com sucesso:', data);
+      })
+      .catch((error) => console.error('Erro ao cadastrar escola:', error));
   };
 
-  // lidar com mudanças nos campos da turma
   const handleClassroomChange = (e) => {
     setClassroom({ ...classroom, [e.target.name]: e.target.value });
   };
 
-  // lidar com a seleção de uma escola
   const handleSchoolSelect = (e) => {
     const selectedSchool = e.target.value;
     setClassroom({ ...classroom, selectedSchool });
     setPerson({ ...person, school: selectedSchool });
 
-    // Filtrar os cursos da escola selecionada
     const schoolData = schools.find((school) => school.name === selectedSchool);
     if (schoolData) {
-      setCourses(schoolData.courses); // Atualiza os cursos com base na escola selecionada
+      setCourses(schoolData.courses);
     }
   };
 
-  // cadastrar a turma
   const handleClassroomSubmit = (e) => {
     e.preventDefault();
 
-    const reports = JSON.parse(localStorage.getItem('reports')) || [];
-    reports.push({ classroom });
-
-    // Atualiza o localStorage e limpa os campos de turma
-    localStorage.setItem('reports', JSON.stringify(reports));
-    console.log('Turma cadastrada com sucesso!', classroom);
-    setClassroom({
-      number: '',
-      studentCount: '',
-      location: '',
-      course: '',
-      selectedSchool: ''
-    });
+    fetch('/api/classrooms', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(classroom)
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        setClassrooms([...classrooms, data]);
+        setClassroom({
+          number: '',
+          studentCount: '',
+          location: '',
+          course: '',
+          selectedSchool: ''
+        });
+        console.log('Turma cadastrada com sucesso:', data);
+      })
+      .catch((error) => console.error('Erro ao cadastrar turma:', error));
   };
 
-  // lidar com mudanças nos campos de aluno
   const handlePersonChange = (e) => {
     setPerson({ ...person, [e.target.name]: e.target.value });
   };
 
-  // Filtrar turmas com base na escola e curso selecionados
   const handleCourseSelect = (e) => {
     const selectedCourse = e.target.value;
     setPerson({ ...person, course: selectedCourse });
 
-    const reports = JSON.parse(localStorage.getItem('reports')) || [];
-    const filteredClassrooms = reports
-      .filter((report) => report.classroom && report.classroom.selectedSchool === person.school && report.classroom.course === selectedCourse)
-      .map((report) => report.classroom);
-
-    setClassrooms(filteredClassrooms); // Atualiza as turmas com base na escola e curso selecionados
+    fetch(`/api/classrooms?school=${person.school}&course=${selectedCourse}`) // Exemplo de URL com filtro
+      .then((response) => response.json())
+      .then((data) => {
+        setClassrooms(data);
+      })
+      .catch((error) => console.error('Erro ao buscar turmas:', error));
   };
 
-  // cadastrar o aluno
   const handlePersonSubmit = (e) => {
     e.preventDefault();
 
-    const reports = JSON.parse(localStorage.getItem('reports')) || [];
-    reports.push({ person });
-
-    // Atualiza o localStorage e limpa os campos de aluno
-    localStorage.setItem('reports', JSON.stringify(reports));
-    console.log('Aluno cadastrado com sucesso!', person);
-    setPerson({
-      name: '',
-      email: '',
-      birthDate: '',
-      school: '',
-      course: '',
-      classroom: ''
-    });
+    fetch('/api/students', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(person)
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log('Aluno cadastrado com sucesso:', data);
+        setPerson({
+          name: '',
+          email: '',
+          birthDate: '',
+          school: '',
+          course: '',
+          classroom: ''
+        });
+      })
+      .catch((error) => console.error('Erro ao cadastrar aluno:', error));
   };
 
   const handleLogout = () => {
@@ -177,11 +179,14 @@ const Dashboard = () => {
   };
 
   const handleImageUpload = (event) => {
-    const file = event.target.files[0]; // Obtém o primeiro arquivo selecionado
+    const file = event.target.files[0];
     if (file) {
-      // pode armazenar o arquivo no estado ou enviá-lo para um servidor
-      console.log("Arquivo selecionado:", file);
+      console.log('Arquivo selecionado:', file);
     }
+  };
+
+  const handleNavigateToFacialRecognition = () => {
+    navigate('/ReconhecimentoFacial');
   };
 
   return (
