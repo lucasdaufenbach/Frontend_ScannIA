@@ -14,179 +14,115 @@ const Dashboard = () => {
   const [school, setSchool] = useState({
     name: '',
     address: '',
-    number: '',
-    cnpj: '',
-    studentCount: '',
-    foundationYear: '',
-    classroomCount: '',
-    courses: []
+    number: ''
   });
 
-  const [newCourse, setNewCourse] = useState('');
-  const [tempCourses, setTempCourses] = useState([]);
   const [schools, setSchools] = useState([]);
-  const [courses, setCourses] = useState([]);
   const [classrooms, setClassrooms] = useState([]);
 
   // Estados para formulário de turma
   const [classroom, setClassroom] = useState({
     number: '',
-    studentCount: '',
-    location: '',
-    course: '',
-    selectedSchool: ''
+    year: '',
+    school: ''
   });
 
   // Estado para pessoa (aluno)
   const [person, setPerson] = useState({
     name: '',
-    email: '',
     birthDate: '',
     school: '',
-    course: '',
     classroom: ''
   });
 
-  // Lógica para obter as escolas ao carregar
+  // Obter as escolas ao carregar o componente
   useEffect(() => {
-    fetch('/api/schools') // Substitua pela URL da sua API
+    fetch('/api/schools')
       .then((response) => response.json())
-      .then((data) => {
-        setSchools(data);
-      })
+      .then((data) => setSchools(data))
       .catch((error) => console.error('Erro ao buscar escolas:', error));
   }, []);
 
-  // Atualizar os campos da escola
-  const handleSchoolChange = (e) => {
-    setSchool({ ...school, [e.target.name]: e.target.value });
+  // Obter as turmas de acordo com a escola selecionada
+  useEffect(() => {
+    if (person.school) {
+      fetch(`/api/classrooms?schoolId=${person.school}`)
+        .then((response) => response.json())
+        .then((data) => setClassrooms(data))
+        .catch((error) => console.error('Erro ao buscar turmas:', error));
+    }
+  }, [person.school]);
+
+  // Atualizar os campos dos formulários
+  const handleInputChange = (e, setState) => {
+    const { name, value } = e.target;
+    setState((prevState) => ({ ...prevState, [name]: value }));
   };
 
-  const handleAddCourse = () => {
-    if (newCourse && !tempCourses.includes(newCourse)) {
-      setTempCourses([...tempCourses, newCourse]);
-      setNewCourse('');
+  // Submeter formulário de escola
+  const handleSchoolSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch('/api/schools', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(school)
+      });
+      const newSchool = await response.json();
+      setSchools([...schools, newSchool]);
+      setSchool({ name: '', address: '', number: '' });
+      setShowSchoolForm(false);
+      console.log('Escola cadastrada com sucesso:', newSchool);
+    } catch (error) {
+      console.error('Erro ao cadastrar escola:', error);
     }
   };
 
-  const handleSchoolSubmit = (e) => {
+  // Submeter formulário de turma
+  const handleClassroomSubmit = async (e) => {
     e.preventDefault();
-
-    const schoolWithCourses = { ...school, courses: tempCourses };
-    fetch('/api/schools', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(schoolWithCourses)
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        setSchools([...schools, data]);
-        setSchool({
-          name: '',
-          address: '',
-          number: '',
-          cnpj: '',
-          studentCount: '',
-          foundationYear: '',
-          classroomCount: '',
-          courses: []
-        });
-        setTempCourses([]);
-        console.log('Escola cadastrada com sucesso:', data);
-      })
-      .catch((error) => console.error('Erro ao cadastrar escola:', error));
-  };
-
-  const handleClassroomChange = (e) => {
-    setClassroom({ ...classroom, [e.target.name]: e.target.value });
-  };
-
-  const handleSchoolSelect = (e) => {
-    const selectedSchool = e.target.value;
-    setClassroom({ ...classroom, selectedSchool });
-    setPerson({ ...person, school: selectedSchool });
-
-    const schoolData = schools.find((school) => school.name === selectedSchool);
-    if (schoolData) {
-      setCourses(schoolData.courses);
+    try {
+      const response = await fetch('/api/classrooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(classroom)
+      });
+      const newClassroom = await response.json();
+      setClassrooms([...classrooms, newClassroom]);
+      setClassroom({ number: '', year: '', school: '' });
+      setShowClassroomForm(false);
+      console.log('Turma cadastrada com sucesso:', newClassroom);
+    } catch (error) {
+      console.error('Erro ao cadastrar turma:', error);
     }
   };
 
-  const handleClassroomSubmit = (e) => {
+  // Submeter formulário de aluno
+  const handlePersonSubmit = async (e) => {
     e.preventDefault();
-
-    fetch('/api/classrooms', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(classroom)
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        setClassrooms([...classrooms, data]);
-        setClassroom({
-          number: '',
-          studentCount: '',
-          location: '',
-          course: '',
-          selectedSchool: ''
-        });
-        console.log('Turma cadastrada com sucesso:', data);
-      })
-      .catch((error) => console.error('Erro ao cadastrar turma:', error));
-  };
-
-  const handlePersonChange = (e) => {
-    setPerson({ ...person, [e.target.name]: e.target.value });
-  };
-
-  const handleCourseSelect = (e) => {
-    const selectedCourse = e.target.value;
-    setPerson({ ...person, course: selectedCourse });
-
-    fetch(`/api/classrooms?school=${person.school}&course=${selectedCourse}`) // Exemplo de URL com filtro
-      .then((response) => response.json())
-      .then((data) => {
-        setClassrooms(data);
-      })
-      .catch((error) => console.error('Erro ao buscar turmas:', error));
-  };
-
-  const handlePersonSubmit = (e) => {
-    e.preventDefault();
-
-    fetch('/api/students', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(person)
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log('Aluno cadastrado com sucesso:', data);
-        setPerson({
-          name: '',
-          email: '',
-          birthDate: '',
-          school: '',
-          course: '',
-          classroom: ''
-        });
-      })
-      .catch((error) => console.error('Erro ao cadastrar aluno:', error));
-  };
-
-  const handleLogout = () => {
-    navigate('/');
-  };
-
-  const handleImageUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      console.log('Arquivo selecionado:', file);
+    try {
+      const response = await fetch('/api/students', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(person)
+      });
+      const newPerson = await response.json();
+      setPerson({ name: '', birthDate: '', school: '', classroom: '' });
+      setShowPersonForm(false);
+      console.log('Aluno cadastrado com sucesso:', newPerson);
+    } catch (error) {
+      console.error('Erro ao cadastrar aluno:', error);
     }
   };
 
+  // Navegar para reconhecimento facial
   const handleNavigateToFacialRecognition = () => {
     navigate('/ReconhecimentoFacial');
+  };
+
+  // Logout
+  const handleLogout = () => {
+    navigate('/');
   };
 
   return (
@@ -195,8 +131,11 @@ const Dashboard = () => {
         <div className="container">
           <h2>Cadastro</h2>
 
-          {/*Cadastro de Escola */}
-          <button class="buttonSecundario" onClick={() => setShowSchoolForm(!showSchoolForm)}>
+          {/* Cadastro de Escola */}
+          <button
+            className="buttonSecundario"
+            onClick={() => setShowSchoolForm(!showSchoolForm)}
+          >
             {showSchoolForm ? 'Fechar Cadastro de Escola' : 'Abrir Cadastro de Escola'}
           </button>
           {showSchoolForm && (
@@ -205,161 +144,89 @@ const Dashboard = () => {
               <form onSubmit={handleSchoolSubmit}>
                 <label htmlFor="name">Nome da Escola</label>
                 <input
-                  class="inputForm"
+                  className="inputForm"
                   type="text"
                   name="name"
-                  placeholder="Insira o nome da escola"
                   value={school.name}
-                  onChange={handleSchoolChange}
+                  onChange={(e) => handleInputChange(e, setSchool)}
                   required
                 />
                 <label htmlFor="address">Endereço</label>
                 <input
-                  class="inputForm"
+                  className="inputForm"
                   type="text"
                   name="address"
-                  placeholder="Endereço"
                   value={school.address}
-                  onChange={handleSchoolChange}
+                  onChange={(e) => handleInputChange(e, setSchool)}
                   required
                 />
                 <label htmlFor="number">Número</label>
                 <input
-                  class="inputForm"
+                  className="inputForm"
                   type="text"
                   name="number"
-                  placeholder="Número"
                   value={school.number}
-                  onChange={handleSchoolChange}
+                  onChange={(e) => handleInputChange(e, setSchool)}
                   required
                 />
-                <label htmlFor="cnpj">CNPJ</label>
-                <input
-                  class="inputForm"
-                  type="text"
-                  name="cnpj"
-                  placeholder="CNPJ"
-                  value={school.cnpj}
-                  onChange={handleSchoolChange}
-                  required
-                />
-                <label htmlFor="studentCount">Número de Estudantes</label>
-                <input
-                  class="inputForm"
-                  type="number"
-                  name="studentCount"
-                  placeholder="Quantidade de estudantes"
-                  value={school.studentCount}
-                  onChange={handleSchoolChange}
-                  required
-                />
-                <label htmlFor="foundationYear">Ano de Fundação</label>
-                <input
-                  class="inputForm"
-                  type="text"
-                  name="foundationYear"
-                  placeholder="Ano de Fundação"
-                  value={school.foundationYear}
-                  onChange={handleSchoolChange}
-                  required
-                />
-                <label htmlFor="classroomCount">Número de Salas</label>
-                <input
-                  class="inputForm"
-                  type="number"
-                  name="classroomCount"
-                  placeholder="Número de salas"
-                  value={school.classroomCount}
-                  onChange={handleSchoolChange}
-                  required
-                />
-                <label htmlFor="courses">Cursos</label>
-                <input
-                  class="inputForm"
-                  type="text"
-                  name="courses"
-                  placeholder="Adicionar novo curso"
-                  value={newCourse}
-                  onChange={(e) => setNewCourse(e.target.value)}
-                />
-                <div class="btCadastroEscola">
-                  <button class="buttonPrimario" type="button" onClick={handleAddCourse}>Adicionar Curso</button>
-                  <ul>
-                    {tempCourses.map((course, index) => (
-                      <li key={index}>{course}</li>
-                    ))}
-                  </ul>
-                  <button class="buttonPrimario" type="submit">Cadastrar Escola</button>
-                </div>
-
+                <button className="buttonPrimario" type="submit">Cadastrar Escola</button>
               </form>
             </div>
           )}
 
-          {/*Cadastro de Turma */}
-          <button class="buttonSecundario" onClick={() => setShowClassroomForm(!showClassroomForm)}>
+          {/* Cadastro de Turma */}
+          <button
+            className="buttonSecundario"
+            onClick={() => setShowClassroomForm(!showClassroomForm)}
+          >
             {showClassroomForm ? 'Fechar Cadastro de Turma' : 'Abrir Cadastro de Turma'}
           </button>
           {showClassroomForm && (
             <div className="box">
               <h3>Cadastro de Turma</h3>
               <form onSubmit={handleClassroomSubmit}>
-                <label htmlFor="selectedSchool">Selecione a Escola</label> <br />
-                <select name="selectedSchool" value={classroom.selectedSchool} onChange={handleSchoolSelect} required>
+                <label htmlFor="school">Selecione a Escola</label>
+                <select
+                  name="school"
+                  value={classroom.school}
+                  onChange={(e) => handleInputChange(e, setClassroom)}
+                  required
+                >
                   <option value="">Escolha uma escola</option>
-                  {schools.map((school, index) => (
-                    <option key={index} value={school.name}>
+                  {schools.map((school) => (
+                    <option key={school.id} value={school.id}>
                       {school.name}
                     </option>
                   ))}
-                </select> <br />
-                <label htmlFor="number">Número da Sala</label>
+                </select>
+                <label htmlFor="number">Série</label>
                 <input
-                  class="inputForm"
+                  className="inputForm"
                   type="text"
                   name="number"
-                  placeholder="Número da sala"
                   value={classroom.number}
-                  onChange={handleClassroomChange}
+                  onChange={(e) => handleInputChange(e, setClassroom)}
                   required
                 />
-                <label htmlFor="studentCount">Número de Estudantes</label>
+                <label htmlFor="year">Ano Letivo</label>
                 <input
-                  class="inputForm"
-
-                  type="number"
-                  name="studentCount"
-                  placeholder="Quantidade de estudantes"
-                  value={classroom.studentCount}
-                  onChange={handleClassroomChange}
-                  required
-                />
-                <label htmlFor="location">Localização</label>
-                <input
-                  class="inputForm"
+                  className="inputForm"
                   type="text"
-                  name="location"
-                  placeholder="Localização"
-                  value={classroom.location}
-                  onChange={handleClassroomChange}
+                  name="year"
+                  value={classroom.year}
+                  onChange={(e) => handleInputChange(e, setClassroom)}
                   required
                 />
-                <label htmlFor="course">Selecione o Curso</label>
-                <select name="course" value={classroom.course} onChange={handleClassroomChange} required>
-                  <option value="">Escolha um curso</option>
-                  {courses.map((course, index) => (
-                    <option key={index} value={course}>
-                      {course}
-                    </option>
-                  ))}
-                </select>
-                <button class="btCadastrarDosForm" type="submit">Cadastrar Turma</button>
+                <button className="buttonPrimario" type="submit">Cadastrar Turma</button>
               </form>
             </div>
           )}
 
-          {/*Cadastro de Aluno */}
-          <button className="buttonSecundario" onClick={() => setShowPersonForm(!showPersonForm)}>
+          {/* Cadastro de Aluno */}
+          <button
+            className="buttonSecundario"
+            onClick={() => setShowPersonForm(!showPersonForm)}
+          >
             {showPersonForm ? 'Fechar Cadastro de Aluno' : 'Abrir Cadastro de Aluno'}
           </button>
           {showPersonForm && (
@@ -371,81 +238,61 @@ const Dashboard = () => {
                   className="inputForm"
                   type="text"
                   name="name"
-                  placeholder="Insira o nome do aluno"
                   value={person.name}
-                  onChange={handlePersonChange}
+                  onChange={(e) => handleInputChange(e, setPerson)}
                   required
                 />
-
-                <label htmlFor="email">Email do Aluno</label>
-                <input
-                  className="inputForm"
-                  type="email"
-                  name="email"
-                  placeholder="Insira o email do aluno"
-                  value={person.email}
-                  onChange={handlePersonChange}
-                  required
-                />
-
                 <label htmlFor="birthDate">Data de Nascimento</label>
                 <input
                   className="inputForm"
                   type="date"
                   name="birthDate"
-                  placeholder="Insira a data de nascimento"
                   value={person.birthDate}
-                  onChange={handlePersonChange}
+                  onChange={(e) => handleInputChange(e, setPerson)}
                   required
                 />
-
                 <label htmlFor="school">Selecione a Escola</label>
-                <select name="school" value={person.school} onChange={handleSchoolSelect} required>
+                <select
+                  name="school"
+                  value={person.school}
+                  onChange={(e) => handleInputChange(e, setPerson)}
+                  required
+                >
                   <option value="">Escolha uma escola</option>
-                  {schools.map((school, index) => (
-                    <option key={index} value={school.name}>
+                  {schools.map((school) => (
+                    <option key={school.id} value={school.id}>
                       {school.name}
                     </option>
                   ))}
                 </select>
-
-                <label htmlFor="course">Selecione o Curso</label>
-                <select name="course" value={person.course} onChange={handleCourseSelect} required>
-                  <option value="">Escolha um curso</option>
-                  {courses.map((course, index) => (
-                    <option key={index} value={course}>
-                      {course}
-                    </option>
-                  ))}
-                </select>
-
-                <label htmlFor="classroom">Selecione a Sala</label>
-                <select name="classroom" value={person.classroom} onChange={handlePersonChange} required>
+                <label htmlFor="classroom">Selecione a Turma</label>
+                <select
+                  name="classroom"
+                  value={person.classroom}
+                  onChange={(e) => handleInputChange(e, setPerson)}
+                  required
+                >
                   <option value="">Escolha uma sala</option>
-                  {classrooms.map((classroom, index) => (
-                    <option key={index} value={classroom.number}>
+                  {classrooms.map((classroom) => (
+                    <option key={classroom.id} value={classroom.id}>
                       {classroom.number}
                     </option>
                   ))}
                 </select>
-
-                {/* Campo para upload de imagem */}
-                <label class="upload" htmlFor="photo">Imagens do Rosto</label>
-                <input
-                  className="inputForm"
-                  type="file"
-                  name="photo"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  required
-                />
-
-                <button className="btCadastrarDosForm" type="submit">Cadastrar Aluno</button>
+                <button className="buttonPrimario" type="submit">Cadastrar Aluno</button>
               </form>
             </div>
           )}
-          <button class="buttonFacial" onClick={handleNavigateToFacialRecognition}>Reconhecimento Facial</button>
-          <button class="buttonTerceario" onClick={handleLogout}>Sair</button>
+
+          <button
+            className="buttonPrimario"
+            onClick={handleNavigateToFacialRecognition}
+          >
+            Ir para Reconhecimento Facial
+          </button>
+          <button className="buttonSecundario" onClick={handleLogout}>
+            Logout
+          </button>
         </div>
       </div>
     </div>
