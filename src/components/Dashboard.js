@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Dashboard.css';
 
@@ -98,22 +98,48 @@ const Dashboard = () => {
   };
 
   // Submeter formulário de aluno
+  // Submeter formulário de aluno
   const handlePersonSubmit = async (e) => {
     e.preventDefault();
+
+    // Verifica se a imagem foi capturada
+    if (!capturedImage) {
+      alert('Por favor, capture uma foto antes de cadastrar o aluno.');
+      return;
+    }
+
     try {
+      // Inclui a imagem no objeto da pessoa
+      const personWithImage = {
+        ...person,
+        photo: capturedImage, // Adiciona a imagem capturada
+      };
+
       const response = await fetch('http://localhost:8082/api/alunos/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(person)
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(personWithImage),
       });
+
       const newPerson = await response.json();
-      setPerson({ name: '', birthDate: '', school: '', classroom: '' });
+
+      // Limpa os campos após o cadastro
+      setPerson({ nome: '', birthDate: '', escola: '', salaDeAula: '' });
+      setCapturedImage(null); // Reseta a imagem capturada
       setShowPersonForm(false);
+      setShowCaptureButton(true); // Exibe o botão de captura novamente
+      setShowTryAgainButton(false);
+
       console.log('Aluno cadastrado com sucesso:', newPerson);
+      alert('Aluno cadastrado com sucesso!');
     } catch (error) {
       console.error('Erro ao cadastrar aluno:', error);
+      alert('Erro ao cadastrar aluno. Tente novamente.');
     }
   };
+
 
   // Navegar para reconhecimento facial
   const handleNavigateToFacialRecognition = () => {
@@ -124,6 +150,83 @@ const Dashboard = () => {
   const handleLogout = () => {
     navigate('/');
   };
+
+
+
+
+
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+
+  const [showCaptureButton, setShowCaptureButton] = useState(true); // Para mostrar o botão de capturar
+  const [showTryAgainButton, setShowTryAgainButton] = useState(false); // Para mostrar o botão de tentar novamente
+  const [capturedImage, setCapturedImage] = useState(null); // Para armazenar a imagem capturada
+
+  const [status, setStatus] = useState('Posicione seu rosto no círculo...');
+
+  useEffect(() => {
+    if (showCaptureButton && !capturedImage) {
+      // Ativa a câmera quando o botão "Capturar" é exibido
+      const startCamera = async () => {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          videoRef.current.srcObject = stream;
+        } catch (error) {
+          console.error('Erro ao acessar a câmera:', error);
+        }
+      };
+      startCamera();
+    }
+  }, [showCaptureButton, capturedImage]);
+
+  const handleCaptureClick = () => {
+    // Captura a foto ao clicar no botão "Capturar"
+    const canvas = canvasRef.current;
+    const context = canvas.getContext('2d');
+    context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+    setCapturedImage(canvas.toDataURL('image/jpeg')); // Armazena a foto como base64
+    setShowCaptureButton(false); // Esconde o botão de capturar após a foto ser tirada
+    setShowTryAgainButton(true); // Mostra o botão de tentar novamente após a captura
+    setStatus('Foto capturada, você pode tentar novamente ou salvar!');
+  };
+
+  const handleTryAgainClick = () => {
+    setCapturedImage(null); // Limpa a imagem capturada
+    setShowCaptureButton(true); // Mostra o botão de capturar novamente
+    setShowTryAgainButton(false); // Esconde o botão de tentar novamente
+    setStatus('Posicione seu rosto no círculo...');
+  };
+
+  const handleSaveClick = () => {
+    // Envia a foto para a API (substitua pela sua URL real da API)
+    fetch('http://localhost:8082/api/captura', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: capturedImage })
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log('Foto salva com sucesso:', data);
+        // Resetar o estado após salvar
+        setCapturedImage(null);
+        setShowCaptureButton(true);
+        setShowTryAgainButton(false);
+        setStatus('Foto salva com sucesso!');
+      })
+      .catch((error) => {
+        console.error('Erro ao salvar foto:', error);
+        setStatus('Erro ao salvar a foto.');
+      });
+  };
+
+
+
+
+
+
+
+
+
 
   return (
     <div>
@@ -279,6 +382,67 @@ const Dashboard = () => {
                     </option>
                   ))}
                 </select>
+
+
+                <div>
+                  <div className="center">
+                    <div className="container">
+                      <h2>Cadastro</h2>
+
+                      {/* Status */}
+                      <div>
+                        <p>{status}</p>
+                      </div>
+
+                      {/* Camera */}
+                      {!capturedImage ? (
+                        <div>
+                          <video
+                            ref={videoRef}
+                            autoPlay
+                            style={{ width: '100%', height: 'auto', borderRadius: '8px' }}
+                          />
+                          <canvas
+                            ref={canvasRef}
+                            width="640"
+                            height="480"
+                            style={{ display: 'none' }}
+                          />
+                        </div>
+                      ) : (
+                        <div>
+                          <img
+                            src={capturedImage}
+                            alt="Captura"
+                            style={{ width: '100%', maxWidth: '640px', borderRadius: '8px' }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Botão de Capturar */}
+                      {showCaptureButton && !capturedImage && (
+                        <div>
+                          <button className="buttonSecundario" onClick={handleCaptureClick}>
+                            Capturar
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Botão de Tentar Novamente */}
+                      {showTryAgainButton && (
+                        <div>
+                          <button className="buttonSecundario" onClick={handleTryAgainClick}>
+                            Tentar Novamente
+                          </button>
+                        </div>
+                      )}
+
+                    </div>
+                  </div>
+                </div>
+
+
+
                 <button className="buttonPrimario" type="submit">Cadastrar Aluno</button>
               </form>
             </div>
