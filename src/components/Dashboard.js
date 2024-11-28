@@ -11,12 +11,7 @@ const Dashboard = () => {
   const [showPersonForm, setShowPersonForm] = useState(false);
 
   // Estados para controle do formulário de escola
-  const [school, setSchool] = useState({
-    name: '',
-    address: '',
-    number: ''
-  });
-
+  const [school, setSchool] = useState();
   const [schools, setSchools] = useState([]);
   const [classrooms, setClassrooms] = useState([]);
 
@@ -296,11 +291,13 @@ const Dashboard = () => {
                   required
                 >
                   <option value="">Escolha uma escola</option>
-                  {schools.map((school) => (
-                    <option key={school.id} value={school.id}>
-                      {school.name}
-                    </option>
-                  ))}
+                  console.log(school)
+                  console.log(schools)
+                  {Array.isArray(schools) && schools.map((school) => (
+                  <option key={school.id} value={school.id}>
+                    {school.name}
+                  </option>
+                ))}
                 </select>
                 <label htmlFor="number">Série</label>
                 <input

@@ -8,18 +8,29 @@ const Login = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+    console.log(email, password);
+    try {
+      // Faz a requisição para a API de login
+      const response = await fetch('http://localhost:8082/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, senha: String(password) })
+      });
 
-    // Pegando o e-mail e a senha cadastrados do localStorage
-    const registeredEmail = localStorage.getItem('registeredEmail');
-    const registeredPassword = localStorage.getItem('registeredPassword');
-
-    // Verificando se o e-mail e a senha correspondem ao que foi cadastrado
-    if (email === registeredEmail && password === registeredPassword) {
-      navigate('/Dashboard'); // Redireciona para o Dashboard
-    } else {
-      setErrorMessage('Email ou senha inválidos.');
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem('token', data.token); // Armazena o token no localStorage
+        navigate('/Dashboard'); // Redireciona para o Dashboard
+      } else {
+        const errorData = await response.json();
+        setErrorMessage(errorData.message || 'Erro ao fazer login.');
+      }
+    } catch (error) {
+      setErrorMessage('Erro ao conectar com o servidor.');
     }
   };
 
@@ -35,7 +46,7 @@ const Login = () => {
         {errorMessage && <p className="alert">{errorMessage}</p>}
         <form onSubmit={handleLogin}>
           <input
-            class="inputLogin"
+            className="inputLogin"
             type="email"
             placeholder="Email"
             value={email}
@@ -43,14 +54,14 @@ const Login = () => {
             required
           />
           <input
-            class="inputLogin"
+            className="inputLogin"
             type="password"
             placeholder="Senha"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <button class="buttonSecundario" type="submit">Entrar</button>
+          <button className="buttonSecundario" type="submit">Entrar</button>
         </form>
 
         <button className="register-btn" onClick={handleRegisterRedirect}>

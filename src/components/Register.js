@@ -3,15 +3,20 @@ import { useNavigate } from 'react-router-dom'; // Importa o hook useNavigate pa
 import './Register.css';
 
 const Register = () => {
+  const [nome, setNome] = useState(''); // Estado para nome do usuário
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [username, setUsername] = useState(''); // Estado para nome do usuário
-  const [role, setRole] = useState(''); // Estado para papel do usuário
+  const [senha, setSenha] = useState(''); // Estado para senha
+  const [papel, setPapel] = useState(''); // Estado para papel do usuário
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate(); // useNavigate para redirecionar
 
   const handleRegister = async () => {
+    if (!nome || !email || !senha || !papel) {
+      setError('Todos os campos são obrigatórios!');
+      return;
+    }
+
     try {
       const response = await fetch('http://localhost:8082/api/usuarios', {
         method: 'POST',
@@ -19,19 +24,19 @@ const Register = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          nome,
           email,
-          password,
-          username,
-          role,
+          senha,
+          papel,
         }),
       });
 
       if (response.ok) {
         setSuccess('Cadastro realizado com sucesso!');
+        setNome('');
         setEmail('');
-        setPassword('');
-        setUsername('');
-        setRole('');
+        setSenha('');
+        setPapel('');
       } else {
         const errorData = await response.json();
         setError(`Erro ao cadastrar: ${errorData.message || 'Erro desconhecido'}`);
@@ -54,8 +59,8 @@ const Register = () => {
           className="cadastroInput"
           type="text"
           placeholder="Digite seu nome"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
         />
         <input
           className="cadastroInput"
@@ -68,15 +73,15 @@ const Register = () => {
           className="cadastroInput"
           type="password"
           placeholder="Digite sua senha"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          value={senha}
+          onChange={(e) => setSenha(e.target.value)}
         />
         <input
           className="cadastroInput"
           type="text"
           placeholder="Digite seu papel (ex: Admin, Usuário)"
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
+          value={papel}
+          onChange={(e) => setPapel(e.target.value)}
         />
         {success && <p className="alert" style={{ color: 'green' }}>{success}</p>}
         {error && <p className="alert" style={{ color: 'red' }}>{error}</p>}
