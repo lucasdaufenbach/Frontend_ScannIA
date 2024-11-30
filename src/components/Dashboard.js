@@ -41,17 +41,16 @@ const Dashboard = () => {
   const [status, setStatus] = useState('Posicione seu rosto no círculo...');
 
   // Função para carregar escolas
-  useEffect(() => {
-    const fetchSchools = async () => {
-      try {
-        const response = await api.get('/api/escolas');
-        setSchools(response.data);
-      } catch (error) {
-        console.error('Erro ao buscar escolas:', error);
-      }
-    };
-    fetchSchools();
-  }, []);
+  const fetchSchools = async () => {
+    try {
+      console.log('Carregando escolas...');
+      const response = await api.get('/api/escolas/');
+      console.log('Resposta da API:', response.data);
+      setSchools(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar escolas:', error);
+    }
+  };
 
   // Função para carregar turmas de acordo com a escola selecionada
   useEffect(() => {
@@ -227,22 +226,17 @@ const Dashboard = () => {
                 <select
                   name="escola_id"
                   value={classroom.escola_id}
+                  onFocus={fetchSchools} // Dispara o GET ao focar no select
                   onChange={(e) => handleInputChange(e, setClassroom)}
                   required
                 >
-                   <option value="">Escolha uma escola</option>
-                  {/* Exibição condicional sem map */}
+                  <option value="">Escolha uma escola</option>
                   {Array.isArray(schools) && schools.length > 0 ? (
-                    schools.reduce((acc, school) => {
-                      if (school.id && school.nome) {
-                        acc.push(
-                          <option key={school.id} value={school.id}>
-                            {school.nome}
-                          </option>
-                        );
-                      }
-                      return acc;
-                    }, [])
+                  schools.map((school) => (
+                  <option key={school.id} value={school.id}>
+                    {school.nome}
+                  </option>
+                    ))
                   ) : (
                     <option value="" disabled>
                       Nenhuma escola disponível
