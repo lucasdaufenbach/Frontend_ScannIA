@@ -6,7 +6,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   // Variável de ambiente para URL base da API
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://5ab9-2001-12a0-5091-c001-4ab8-ad4a-8b8c-19d1.ngrok-free.app/';
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://5ab9-2001-12a0-5091-c001-4ab8-ad4a-8b8c-19d1.ngrok-free.app';
 
   // Estados de visibilidade para os formulários
   const [showSchoolForm, setShowSchoolForm] = useState(false);
@@ -171,7 +171,6 @@ const Dashboard = () => {
   const handleLogout = () => {
     navigate('/');
   };
-
 
   return (
     <div>
