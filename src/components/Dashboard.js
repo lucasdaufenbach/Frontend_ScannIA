@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../api'; // Ajuste o caminho conforme sua estrutura
 import './Dashboard.css';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-
-  // Variável de ambiente para URL base da API
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://5ab9-2001-12a0-5091-c001-4ab8-ad4a-8b8c-19d1.ngrok-free.app';
 
   // Estados de visibilidade para os formulários
   const [showSchoolForm, setShowSchoolForm] = useState(false);
@@ -42,21 +40,31 @@ const Dashboard = () => {
   const [showTryAgainButton, setShowTryAgainButton] = useState(false);
   const [status, setStatus] = useState('Posicione seu rosto no círculo...');
 
-  // Obter as escolas ao carregar o componente
+  // Função para carregar escolas
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/escolas`)
-      .then((response) => response.json())
-      .then((data) => setSchools(data))
-      .catch((error) => console.error('Erro ao buscar escolas:', error));
+    const fetchSchools = async () => {
+      try {
+        const response = await api.get('/api/escolas');
+        setSchools(response.data);
+      } catch (error) {
+        console.error('Erro ao buscar escolas:', error);
+      }
+    };
+    fetchSchools();
   }, []);
 
-  // Obter as turmas de acordo com a escola selecionada
+  // Função para carregar turmas de acordo com a escola selecionada
   useEffect(() => {
     if (person.school) {
-      fetch(`${API_BASE_URL}/api/turmas/?schoolId=${person.school}`)
-        .then((response) => response.json())
-        .then((data) => setClassrooms(data))
-        .catch((error) => console.error('Erro ao buscar turmas:', error));
+      const fetchClassrooms = async () => {
+        try {
+          const response = await api.get(`/api/turmas/?schoolId=${person.school}`);
+          setClassrooms(response.data);
+        } catch (error) {
+          console.error('Erro ao buscar turmas:', error);
+        }
+      };
+      fetchClassrooms();
     }
   }, [person.school]);
 
@@ -70,13 +78,8 @@ const Dashboard = () => {
   const handleSchoolSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`${API_BASE_URL}/api/escolas`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(school),
-      });
-      const newSchool = await response.json();
-      setSchools([...schools, newSchool]);
+      const response = await api.post('/api/escolas', school);
+      setSchools([...schools, response.data]);
       setSchool({ nome: '', endereco: '', telefone: '' });
       setShowSchoolForm(false);
     } catch (error) {
@@ -88,13 +91,8 @@ const Dashboard = () => {
   const handleClassroomSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`${API_BASE_URL}/api/turmas`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(classroom),
-      });
-      const newClassroom = await response.json();
-      setClassrooms([...classrooms, newClassroom]);
+      const response = await api.post('/api/turmas', classroom);
+      setClassrooms([...classrooms, response.data]);
       setClassroom({ serie: '', nome: '', ano_letivo: '', escola_id: '' });
       setShowClassroomForm(false);
     } catch (error) {
@@ -113,14 +111,7 @@ const Dashboard = () => {
 
     try {
       const personWithImage = { ...person, foto: capturedImage };
-
-      const response = await fetch(`${API_BASE_URL}/api/alunos`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(personWithImage),
-      });
-
-      const newPerson = await response.json();
+      await api.post('/api/alunos', personWithImage);
       setPerson({ nome: '', data_nascimento: '', turma: '', foto: '' });
       setCapturedImage(null);
       setShowCaptureButton(true);
@@ -132,7 +123,7 @@ const Dashboard = () => {
     }
   };
 
-  // Captura de imagem
+  // Funções de captura de imagem
   useEffect(() => {
     if (showCaptureButton && !capturedImage) {
       const startCamera = async () => {
@@ -239,16 +230,24 @@ const Dashboard = () => {
                   onChange={(e) => handleInputChange(e, setClassroom)}
                   required
                 >
-                  <option value="">Escolha uma escola</option>
-                  {schools.length > 0 ? (
-                    schools.map((school) => (
-                  <option key={school.id} value={school.id}>
-                    {school.nome}
-                  </option>
-                ))
-              ):(
-                <option value="" disabled>Carregando escolas...</option>
-              )}
+                   <option value="">Escolha uma escola</option>
+                  {/* Exibição condicional sem map */}
+                  {Array.isArray(schools) && schools.length > 0 ? (
+                    schools.reduce((acc, school) => {
+                      if (school.id && school.nome) {
+                        acc.push(
+                          <option key={school.id} value={school.id}>
+                            {school.nome}
+                          </option>
+                        );
+                      }
+                      return acc;
+                    }, [])
+                  ) : (
+                    <option value="" disabled>
+                      Nenhuma escola disponível
+                    </option>
+                  )}
                 </select>
                 <label htmlFor="number">Série</label>
                 <input
