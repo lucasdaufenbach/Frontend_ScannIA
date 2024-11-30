@@ -8,23 +8,31 @@ const Login = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
 
+  // Define a URL base da API a partir da variável de ambiente ou usa uma URL padrão
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://5ab9-2001-12a0-5091-c001-4ab8-ad4a-8b8c-19d1.ngrok-free.app';
+
   const handleLogin = async (e) => {
     e.preventDefault();
-    console.log(email, password);
+
     try {
       // Faz a requisição para a API de login
-      const response = await fetch('http://localhost:8082/api/login', {
+      const response = await fetch(`${API_BASE_URL}/api/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, senha: String(password) })
+        body: JSON.stringify({ email, senha: String(password) }), // Ajuste do campo senha para corresponder ao backend
       });
 
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem('token', data.token); // Armazena o token no localStorage
-        navigate('/Dashboard'); // Redireciona para o Dashboard
+
+        // Armazena o token e outros dados do usuário
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+
+        // Redireciona para o Dashboard
+        navigate('/Dashboard');
       } else {
         const errorData = await response.json();
         setErrorMessage(errorData.message || 'Erro ao fazer login.');

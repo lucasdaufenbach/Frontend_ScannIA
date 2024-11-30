@@ -5,34 +5,46 @@ import './Dashboard.css';
 const Dashboard = () => {
   const navigate = useNavigate();
 
+  // Variável de ambiente para URL base da API
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://5ab9-2001-12a0-5091-c001-4ab8-ad4a-8b8c-19d1.ngrok-free.app/';
+
   // Estados de visibilidade para os formulários
   const [showSchoolForm, setShowSchoolForm] = useState(false);
   const [showClassroomForm, setShowClassroomForm] = useState(false);
   const [showPersonForm, setShowPersonForm] = useState(false);
 
   // Estados para controle do formulário de escola
-  const [school, setSchool] = useState();
+  const [school, setSchool] = useState({ nome: '', endereco: '', telefone: '' });
   const [schools, setSchools] = useState([]);
   const [classrooms, setClassrooms] = useState([]);
 
   // Estados para formulário de turma
   const [classroom, setClassroom] = useState({
-    number: '',
-    year: '',
-    school: ''
+    serie: '',
+    nome: '',
+    ano_letivo: '',
+    escola_id: '',
   });
 
   // Estado para pessoa (aluno)
   const [person, setPerson] = useState({
-    name: '',
-    birthDate: '',
-    school: '',
-    classroom: ''
+    nome: '',
+    data_nascimento: '',
+    turma: '',
+    foto: '',
   });
+
+  // Estados relacionados à captura de imagem
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const [capturedImage, setCapturedImage] = useState(null);
+  const [showCaptureButton, setShowCaptureButton] = useState(true);
+  const [showTryAgainButton, setShowTryAgainButton] = useState(false);
+  const [status, setStatus] = useState('Posicione seu rosto no círculo...');
 
   // Obter as escolas ao carregar o componente
   useEffect(() => {
-    fetch('http://localhost:8082/api/escolas/')
+    fetch(`${API_BASE_URL}/api/escolas`)
       .then((response) => response.json())
       .then((data) => setSchools(data))
       .catch((error) => console.error('Erro ao buscar escolas:', error));
@@ -41,7 +53,7 @@ const Dashboard = () => {
   // Obter as turmas de acordo com a escola selecionada
   useEffect(() => {
     if (person.school) {
-      fetch(`http://localhost:8082/api/turmas/?schoolId=${person.school}`)
+      fetch(`${API_BASE_URL}/api/turmas/?schoolId=${person.school}`)
         .then((response) => response.json())
         .then((data) => setClassrooms(data))
         .catch((error) => console.error('Erro ao buscar turmas:', error));
@@ -58,16 +70,15 @@ const Dashboard = () => {
   const handleSchoolSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:8082/api/escolas/', {
+      const response = await fetch(`${API_BASE_URL}/api/escolas`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(school)
+        body: JSON.stringify(school),
       });
       const newSchool = await response.json();
       setSchools([...schools, newSchool]);
-      setSchool({ name: '', address: '', number: '' });
+      setSchool({ nome: '', endereco: '', telefone: '' });
       setShowSchoolForm(false);
-      console.log('Escola cadastrada com sucesso:', newSchool);
     } catch (error) {
       console.error('Erro ao cadastrar escola:', error);
     }
@@ -77,57 +88,43 @@ const Dashboard = () => {
   const handleClassroomSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:8082/api/turmas/', {
+      const response = await fetch(`${API_BASE_URL}/api/turmas`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(classroom)
+        body: JSON.stringify(classroom),
       });
       const newClassroom = await response.json();
       setClassrooms([...classrooms, newClassroom]);
-      setClassroom({ number: '', year: '', school: '' });
+      setClassroom({ serie: '', nome: '', ano_letivo: '', escola_id: '' });
       setShowClassroomForm(false);
-      console.log('Turma cadastrada com sucesso:', newClassroom);
     } catch (error) {
       console.error('Erro ao cadastrar turma:', error);
     }
   };
 
   // Submeter formulário de aluno
-  // Submeter formulário de aluno
   const handlePersonSubmit = async (e) => {
     e.preventDefault();
 
-    // Verifica se a imagem foi capturada
     if (!capturedImage) {
       alert('Por favor, capture uma foto antes de cadastrar o aluno.');
       return;
     }
 
     try {
-      // Inclui a imagem no objeto da pessoa
-      const personWithImage = {
-        ...person,
-        photo: capturedImage, // Adiciona a imagem capturada
-      };
+      const personWithImage = { ...person, foto: capturedImage };
 
-      const response = await fetch('http://localhost:8082/api/alunos/', {
+      const response = await fetch(`${API_BASE_URL}/api/alunos`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(personWithImage),
       });
 
       const newPerson = await response.json();
-
-      // Limpa os campos após o cadastro
-      setPerson({ nome: '', birthDate: '', escola: '', salaDeAula: '' });
-      setCapturedImage(null); // Reseta a imagem capturada
-      setShowPersonForm(false);
-      setShowCaptureButton(true); // Exibe o botão de captura novamente
+      setPerson({ nome: '', data_nascimento: '', turma: '', foto: '' });
+      setCapturedImage(null);
+      setShowCaptureButton(true);
       setShowTryAgainButton(false);
-
-      console.log('Aluno cadastrado com sucesso:', newPerson);
       alert('Aluno cadastrado com sucesso!');
     } catch (error) {
       console.error('Erro ao cadastrar aluno:', error);
@@ -135,33 +132,9 @@ const Dashboard = () => {
     }
   };
 
-
-  // Navegar para reconhecimento facial
-  const handleNavigateToFacialRecognition = () => {
-    navigate('/ReconhecimentoFacial');
-  };
-
-  // Logout
-  const handleLogout = () => {
-    navigate('/');
-  };
-
-
-
-
-
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-
-  const [showCaptureButton, setShowCaptureButton] = useState(true); // Para mostrar o botão de capturar
-  const [showTryAgainButton, setShowTryAgainButton] = useState(false); // Para mostrar o botão de tentar novamente
-  const [capturedImage, setCapturedImage] = useState(null); // Para armazenar a imagem capturada
-
-  const [status, setStatus] = useState('Posicione seu rosto no círculo...');
-
+  // Captura de imagem
   useEffect(() => {
     if (showCaptureButton && !capturedImage) {
-      // Ativa a câmera quando o botão "Capturar" é exibido
       const startCamera = async () => {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -175,52 +148,29 @@ const Dashboard = () => {
   }, [showCaptureButton, capturedImage]);
 
   const handleCaptureClick = () => {
-    // Captura a foto ao clicar no botão "Capturar"
     const canvas = canvasRef.current;
     const context = canvas.getContext('2d');
     context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-    setCapturedImage(canvas.toDataURL('image/jpeg')); // Armazena a foto como base64
-    setShowCaptureButton(false); // Esconde o botão de capturar após a foto ser tirada
-    setShowTryAgainButton(true); // Mostra o botão de tentar novamente após a captura
-    setStatus('Foto capturada, você pode tentar novamente ou salvar!');
+    setCapturedImage(canvas.toDataURL('image/jpeg'));
+    setShowCaptureButton(false);
+    setShowTryAgainButton(true);
+    setStatus('Foto capturada. Você pode tentar novamente ou salvar.');
   };
 
   const handleTryAgainClick = () => {
-    setCapturedImage(null); // Limpa a imagem capturada
-    setShowCaptureButton(true); // Mostra o botão de capturar novamente
-    setShowTryAgainButton(false); // Esconde o botão de tentar novamente
+    setCapturedImage(null);
+    setShowCaptureButton(true);
+    setShowTryAgainButton(false);
     setStatus('Posicione seu rosto no círculo...');
   };
 
-  const handleSaveClick = () => {
-    // Envia a foto para a API (substitua pela sua URL real da API)
-    fetch('http://localhost:8082/api/captura', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image: capturedImage })
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log('Foto salva com sucesso:', data);
-        // Resetar o estado após salvar
-        setCapturedImage(null);
-        setShowCaptureButton(true);
-        setShowTryAgainButton(false);
-        setStatus('Foto salva com sucesso!');
-      })
-      .catch((error) => {
-        console.error('Erro ao salvar foto:', error);
-        setStatus('Erro ao salvar a foto.');
-      });
+  const handleNavigateToFacialRecognition = () => {
+    navigate('/ReconhecimentoFacial');
   };
 
-
-
-
-
-
-
-
+  const handleLogout = () => {
+    navigate('/');
+  };
 
 
   return (
@@ -244,8 +194,8 @@ const Dashboard = () => {
                 <input
                   className="inputForm"
                   type="text"
-                  name="name"
-                  value={school.name}
+                  name="nome"
+                  value={school.nome}
                   onChange={(e) => handleInputChange(e, setSchool)}
                   required
                 />
@@ -253,8 +203,8 @@ const Dashboard = () => {
                 <input
                   className="inputForm"
                   type="text"
-                  name="address"
-                  value={school.address}
+                  name="endereco"
+                  value={school.endereco}
                   onChange={(e) => handleInputChange(e, setSchool)}
                   required
                 />
@@ -262,8 +212,8 @@ const Dashboard = () => {
                 <input
                   className="inputForm"
                   type="text"
-                  name="number"
-                  value={school.number}
+                  name="telefone"
+                  value={school.telefone}
                   onChange={(e) => handleInputChange(e, setSchool)}
                   required
                 />
@@ -283,28 +233,39 @@ const Dashboard = () => {
             <div className="box">
               <h3>Cadastro de Turma</h3>
               <form onSubmit={handleClassroomSubmit}>
-                <label htmlFor="school">Selecione a Escola</label>
+                <label htmlFor="escola_id">Selecione a Escola</label>
                 <select
-                  name="school"
-                  value={classroom.school}
+                  name="escola_id"
+                  value={classroom.escola_id}
                   onChange={(e) => handleInputChange(e, setClassroom)}
                   required
                 >
                   <option value="">Escolha uma escola</option>
-                  console.log(school)
-                  console.log(schools)
-                  {Array.isArray(schools) && schools.map((school) => (
+                  {schools.length > 0 ? (
+                    schools.map((school) => (
                   <option key={school.id} value={school.id}>
-                    {school.name}
+                    {school.nome}
                   </option>
-                ))}
+                ))
+              ):(
+                <option value="" disabled>Carregando escolas...</option>
+              )}
                 </select>
                 <label htmlFor="number">Série</label>
                 <input
                   className="inputForm"
                   type="text"
-                  name="number"
-                  value={classroom.number}
+                  name="serie"
+                  value={classroom.serie}
+                  onChange={(e) => handleInputChange(e, setClassroom)}
+                  required
+                />
+                <label htmlFor="nome">Nome</label>
+                <input
+                  className="inputForm"
+                  type="text"
+                  name="nome"
+                  value={classroom.nome}
                   onChange={(e) => handleInputChange(e, setClassroom)}
                   required
                 />
@@ -312,8 +273,8 @@ const Dashboard = () => {
                 <input
                   className="inputForm"
                   type="text"
-                  name="year"
-                  value={classroom.year}
+                  name="ano_letivo"
+                  value={classroom.ano_letivo}
                   onChange={(e) => handleInputChange(e, setClassroom)}
                   required
                 />

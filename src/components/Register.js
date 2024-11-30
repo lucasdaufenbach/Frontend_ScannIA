@@ -11,6 +11,9 @@ const Register = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate(); // useNavigate para redirecionar
 
+  // Obtém a URL base da API da variável de ambiente
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://5ab9-2001-12a0-5091-c001-4ab8-ad4a-8b8c-19d1.ngrok-free.app';
+
   const handleRegister = async () => {
     if (!nome || !email || !senha || !papel) {
       setError('Todos os campos são obrigatórios!');
@@ -18,7 +21,7 @@ const Register = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:8082/api/usuarios', {
+      const response = await fetch(`${API_BASE_URL}/api/usuarios`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -37,6 +40,7 @@ const Register = () => {
         setEmail('');
         setSenha('');
         setPapel('');
+        setError('');
       } else {
         const errorData = await response.json();
         setError(`Erro ao cadastrar: ${errorData.message || 'Erro desconhecido'}`);
