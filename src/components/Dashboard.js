@@ -27,8 +27,8 @@ const Dashboard = () => {
   // Estado para pessoa (aluno)
   const [person, setPerson] = useState({
     nome: '',
-    data_nascimento: '',
-    turma: '',
+    data_nascimento: 'YYYY-MM-DD',
+    turma_id: '',
     foto: '',
   });
 
@@ -39,11 +39,12 @@ const Dashboard = () => {
   const [showCaptureButton, setShowCaptureButton] = useState(true);
   const [showTryAgainButton, setShowTryAgainButton] = useState(false);
   const [status, setStatus] = useState('Posicione seu rosto no círculo...');
+  
   // Função para carregar escolas
   const fetchSchools = async () => {
     try {
       console.log('Carregando escolas...');
-      const response = await api.get('https://599e-2804-4bd0-485-5900-842a-8d71-c552-d2e3.ngrok-free.app/api/escolas/', {
+      const response = await api.get('https://f6d1-2804-4bd0-485-5900-aae-6533-c4d-92fc.ngrok-free.app/api/escolas/', {
         headers: {
           'ngrok-skip-browser-warning': 'true',
         },
@@ -58,18 +59,32 @@ const Dashboard = () => {
 
   // Função para carregar turmas de acordo com a escola selecionada
   useEffect(() => {
-    if (person.school) {
-      const fetchClassrooms = async () => {
+    const fetchClassrooms = async () => {
+      if (classroom.escola_id) {
         try {
-          const response = await api.get(`/api/turmas/?schoolId=${person.school}`);
-          setClassrooms(response.data);
+          const response = await api.get(
+            `https://f6d1-2804-4bd0-485-5900-aae-6533-c4d-92fc.ngrok-free.app/api/turmas/?escola_id=${classroom.escola_id}`,{
+              headers: {
+                'ngrok-skip-browser-warning': 'true',
+              },
+            }
+          );
+          if (Array.isArray(response.data)) {
+            setClassrooms(response.data);
+          } else {
+            console.error('Resposta inesperada da API:', response.data);
+            setClassrooms([]);
+          }
         } catch (error) {
           console.error('Erro ao buscar turmas:', error);
+          setClassrooms([]); // Limpa turmas em caso de erro
         }
-      };
-      fetchClassrooms();
-    }
-  }, [person.school]);
+      } else {
+        setClassrooms([]);
+      }}
+    fetchClassrooms();
+  }, [classroom.escola_id]); // Certifique-se de incluir person.school como dependência.
+  
 
   // Atualizar os campos dos formulários
   const handleInputChange = (e, setState) => {
@@ -94,7 +109,7 @@ const Dashboard = () => {
   const handleClassroomSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await api.post('https://599e-2804-4bd0-485-5900-842a-8d71-c552-d2e3.ngrok-free.app/api/turmas', classroom);
+      const response = await api.post('https://f6d1-2804-4bd0-485-5900-aae-6533-c4d-92fc.ngrok-free.app/api/turmas/', classroom);
       setClassrooms([...classrooms, response.data]);
       setClassroom({ serie: '', nome: '', ano_letivo: '', escola_id: '' });
       setShowClassroomForm(false);
@@ -106,25 +121,47 @@ const Dashboard = () => {
   // Submeter formulário de aluno
   const handlePersonSubmit = async (e) => {
     e.preventDefault();
-
+  
     if (!capturedImage) {
       alert('Por favor, capture uma foto antes de cadastrar o aluno.');
       return;
     }
-
+  
     try {
-      const personWithImage = { ...person, foto: capturedImage };
-      await api.post('/api/alunos', personWithImage);
+      // Converter a imagem base64 para um arquivo Blob
+      const base64Data = capturedImage.split(',')[1]; // Remove o prefixo 'data:image/jpeg;base64,'
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length).map((_, i) => byteCharacters.charCodeAt(i));
+      const byteArray = new Uint8Array(byteNumbers);
+      const file = new File([byteArray], 'foto-aluno.jpg', { type: 'image/jpeg' });
+  
+      // Criar um objeto FormData para enviar como multipart/form-data
+      const formData = new FormData();
+      formData.append('nome', person.nome);
+      formData.append('data_nascimento', person.data_nascimento);
+      formData.append('turma_id', person.turma_id);
+      formData.append('foto', file);
+  
+      // Enviar para a API
+      const response = await api.post(
+        'https://f6d1-2804-4bd0-485-5900-aae-6533-c4d-92fc.ngrok-free.app/api/alunos',
+        formData,
+        {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        }
+      );
+  
+      alert('Aluno cadastrado com sucesso!');
       setPerson({ nome: '', data_nascimento: '', turma: '', foto: '' });
       setCapturedImage(null);
       setShowCaptureButton(true);
       setShowTryAgainButton(false);
-      alert('Aluno cadastrado com sucesso!');
     } catch (error) {
       console.error('Erro ao cadastrar aluno:', error);
       alert('Erro ao cadastrar aluno. Tente novamente.');
     }
   };
+  
 
   // Funções de captura de imagem
   useEffect(() => {
@@ -145,7 +182,7 @@ const Dashboard = () => {
     const canvas = canvasRef.current;
     const context = canvas.getContext('2d');
     context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-    setCapturedImage(canvas.toDataURL('image/jpeg'));
+    setCapturedImage(canvas.toDataURL('image/jpeg;base64'));
     setShowCaptureButton(false);
     setShowTryAgainButton(true);
     setStatus('Foto capturada. Você pode tentar novamente ou salvar.');
@@ -294,8 +331,8 @@ const Dashboard = () => {
                 <input
                   className="inputForm"
                   type="text"
-                  name="name"
-                  value={person.name}
+                  name="nome"
+                  value={person.nome}
                   onChange={(e) => handleInputChange(e, setPerson)}
                   required
                 />
@@ -303,40 +340,51 @@ const Dashboard = () => {
                 <input
                   className="inputForm"
                   type="date"
-                  name="birthDate"
-                  value={person.birthDate}
+                  name="data_nascimento"
+                  value={person.data_nascimento}
                   onChange={(e) => handleInputChange(e, setPerson)}
                   required
                 />
                 <label htmlFor="school">Selecione a Escola</label>
                 <select
-                  name="school"
-                  value={person.school}
-                  onFocus={fetchSchools}
-                  onChange={(e) => handleInputChange(e, setPerson)}
+                  name="escola_id"
+                  value={classroom.escola_id}
+                  onFocus={fetchSchools} // Dispara o GET ao focar no select
+                  onChange={(e) => handleInputChange(e, setClassroom)}
                   required
                 >
                   <option value="">Escolha uma escola</option>
-                  {schools.map((school) => (
-                    <option key={school.id} value={school.id}>
-                      {school.name}
+                  {Array.isArray(schools) && schools.length > 0 ? (
+                  schools.map((school) => (
+                  <option key={school.id} value={school.id}>
+                    {school.nome}
+                  </option>
+                    ))
+                  ) : (
+                    <option value="" disabled>
+                      Nenhuma escola disponível
                     </option>
-                  ))}
+                  )}
                 </select>
                 <label htmlFor="classroom">Selecione a Turma</label>
                 <select
-                  name="classroom"
-                  value={person.classroom}
+                  name="turma_id"
+                  value={person.turma_id || ''}
                   onChange={(e) => handleInputChange(e, setPerson)}
                   required
                 >
                   <option value="">Escolha uma sala</option>
-                  {classrooms.map((classroom) => (
-                    <option key={classroom.id} value={classroom.id}>
-                      {classroom.number}
-                    </option>
-                  ))}
+                  {Array.isArray(classrooms) && classrooms.length > 0 ? (
+                    classrooms.map((classroom) => (
+                      <option key={classroom.id} value={classroom.id}>
+                        {classroom.serie || classroom.nome}
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled>Nenhuma sala disponível</option>
+                  )}
                 </select>
+
 
 
                 <div>
@@ -369,6 +417,7 @@ const Dashboard = () => {
                           <img
                             src={capturedImage}
                             alt="Captura"
+                            name= "foto"
                             style={{ width: '100%', maxWidth: '640px', borderRadius: '8px' }}
                           />
                         </div>

@@ -12,7 +12,7 @@ const Register = () => {
   const navigate = useNavigate(); // useNavigate para redirecionar
 
   // Obtém a URL base da API da variável de ambiente
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://df5b-2804-4bd0-485-5900-cbed-26c3-fa0f-269a.ngrok-free.app';
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://f6d1-2804-4bd0-485-5900-aae-6533-c4d-92fc.ngrok-free.app';
 
   const handleRegister = async () => {
     if (!nome || !email || !senha || !papel) {
