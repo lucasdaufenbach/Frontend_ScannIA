@@ -128,31 +128,35 @@ const Dashboard = () => {
     }
   
     try {
-      // Converter a imagem base64 para um arquivo Blob
-      const base64Data = capturedImage.split(',')[1]; // Remove o prefixo 'data:image/jpeg;base64,'
+      // Converter imagem base64 em Blob
+      const base64Data = capturedImage.split(',')[1];
       const byteCharacters = atob(base64Data);
-      const byteNumbers = new Array(byteCharacters.length).map((_, i) => byteCharacters.charCodeAt(i));
+      const byteNumbers = Array.from(byteCharacters, char => char.charCodeAt(0));
       const byteArray = new Uint8Array(byteNumbers);
       const file = new File([byteArray], 'foto-aluno.jpg', { type: 'image/jpeg' });
   
-      // Criar um objeto FormData para enviar como multipart/form-data
+      // Preparar dados para envio à API
       const formData = new FormData();
       formData.append('nome', person.nome);
       formData.append('data_nascimento', person.data_nascimento);
       formData.append('turma_id', person.turma_id);
-      formData.append('foto', file);
+      formData.append('foto', file); // Anexa o arquivo da foto diretamente
   
-      // Enviar para a API
-      const response = await api.post(
+      // Enviar para a API principal
+      const response = await fetch(
         'https://f6d1-2804-4bd0-485-5900-aae-6533-c4d-92fc.ngrok-free.app/api/alunos',
-        formData,
         {
-          headers: { 'Content-Type': 'multipart/form-data' },
+          method: 'POST',
+          body: formData,
         }
       );
   
+      if (!response.ok) {
+        throw new Error(`Erro na requisição: ${response.statusText}`);
+      }
+  
       alert('Aluno cadastrado com sucesso!');
-      setPerson({ nome: '', data_nascimento: '', turma: '', foto: '' });
+      setPerson({ nome: '', data_nascimento: '', turma_id: '', foto: '' });
       setCapturedImage(null);
       setShowCaptureButton(true);
       setShowTryAgainButton(false);
@@ -161,6 +165,7 @@ const Dashboard = () => {
       alert('Erro ao cadastrar aluno. Tente novamente.');
     }
   };
+  
   
 
   // Funções de captura de imagem
@@ -384,9 +389,6 @@ const Dashboard = () => {
                     <option disabled>Nenhuma sala disponível</option>
                   )}
                 </select>
-
-
-
                 <div>
                   <div className="center">
                     <div className="container">
