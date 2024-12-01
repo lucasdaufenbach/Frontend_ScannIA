@@ -10,13 +10,13 @@ const Login = () => {
 
   // Define a URL base da API a partir da variável de ambiente ou usa uma URL padrão
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://df5b-2804-4bd0-485-5900-cbed-26c3-fa0f-269a.ngrok-free.app';
-
+  console.log(API_BASE_URL)
   const handleLogin = async (e) => {
     e.preventDefault();
 
     try {
       // Faz a requisição para a API de login
-      const response = await fetch(`${API_BASE_URL}/api/login`, {
+      const response = await fetch('https://599e-2804-4bd0-485-5900-842a-8d71-c552-d2e3.ngrok-free.app/api/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

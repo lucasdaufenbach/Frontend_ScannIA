@@ -39,18 +39,22 @@ const Dashboard = () => {
   const [showCaptureButton, setShowCaptureButton] = useState(true);
   const [showTryAgainButton, setShowTryAgainButton] = useState(false);
   const [status, setStatus] = useState('Posicione seu rosto no círculo...');
-
   // Função para carregar escolas
   const fetchSchools = async () => {
     try {
       console.log('Carregando escolas...');
-      const response = await api.get('/api/escolas/');
+      const response = await api.get('https://599e-2804-4bd0-485-5900-842a-8d71-c552-d2e3.ngrok-free.app/api/escolas/', {
+        headers: {
+          'ngrok-skip-browser-warning': 'true',
+        },
+      });
       console.log('Resposta da API:', response.data);
       setSchools(response.data);
     } catch (error) {
       console.error('Erro ao carregar escolas:', error);
     }
   };
+  
 
   // Função para carregar turmas de acordo com a escola selecionada
   useEffect(() => {
@@ -90,7 +94,7 @@ const Dashboard = () => {
   const handleClassroomSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await api.post('/api/turmas', classroom);
+      const response = await api.post('https://599e-2804-4bd0-485-5900-842a-8d71-c552-d2e3.ngrok-free.app/api/turmas', classroom);
       setClassrooms([...classrooms, response.data]);
       setClassroom({ serie: '', nome: '', ano_letivo: '', escola_id: '' });
       setShowClassroomForm(false);
@@ -308,6 +312,7 @@ const Dashboard = () => {
                 <select
                   name="school"
                   value={person.school}
+                  onFocus={fetchSchools}
                   onChange={(e) => handleInputChange(e, setPerson)}
                   required
                 >
