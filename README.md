@@ -16,6 +16,23 @@ Estas instruções ajudarão você a configurar o ambiente local para desenvolvi
 
 ---
 
+
+### Funcionalidades
+1. **APIs RESTful para CRUD**:
+   - Alunos, Escolas, Turmas e Usuários.
+   - Login seguro com autenticação por hash de senha.
+2. **Reconhecimento Facial**:
+   - Validação biométrica com suporte a múltiplos perfis faciais.
+   - Verificação de qualidade e textura da imagem.
+   - Reconhecimento com confirmação via piscadas.
+3. **Armazenamento Seguro**:
+   - Fotos dos alunos e logs de auditoria são armazenados no banco PostgreSQL.
+4. **Logs e Relatórios**:
+   - Registro de acessos no banco de dados.
+   - Suporte opcional para análise visual com Power BI.
+
+---
+
 ### Pré-requisitos
 - Python 3.9 ou superior  
 - PostgreSQL instalado e configurado  
@@ -25,29 +42,13 @@ Estas instruções ajudarão você a configurar o ambiente local para desenvolvi
 
 ---
 
-### Instalação
-1. Clone o repositório:
-
-   ```bash
-   git clone https://github.com/marcoshjf/Frontend_ScannIA.git
-
-2. Configure o ambiente:
-
-    ```bash
-    python -m venv venv
-    source venv/bin/activate  # No Windows: venv\Scripts\activate
-    pip install -r requirements.txt
-
-
----
-
 ### Ferramentas Utilizadas
+- FastAPI: Framework para APIs rápidas e robustas.
 - OpenCV: Para captura e processamento de imagens.
 - MediaPipe: Framework de visão computacional para landmarks faciais.
-- Face Recognition: Para reconhecimento facial preciso.
+- Face Recognition: Biblioteca para reconhecimento facial preciso.
 - PostgreSQL: Banco de dados relacional para armazenar informações.
-- MkDocs: Para documentação do projeto.
-- Power BI (Opcional): Para visualização de métricas e relatórios.
+- bcrypt: Para segurança no armazenamento de senhas.
 
 ---
 
